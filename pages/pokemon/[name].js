@@ -1,19 +1,25 @@
 import Head from 'next/head'
 import { Container, Row, Col } from 'react-bootstrap'
-import axios from 'axios'
+import pokemon from '../../pokemon.json'
 
-const getPokemon = async (context) => {
-  const name = context?.name ? context.name[1] : context
-  try {
-    console.log('Fetching data for query:', name)
-    const { data } = await axios.get(
-      `http://localhost:3000/api/pokemon?name=${encodeURIComponent(name)}`
-    )
-    console.log('Received data:', data)
-    return data
-  } catch (error) {
-    console.error('Error fetching data:', error)
-    throw new Error('Failed to fetch data')
+export async function getStaticPaths() {
+  return {
+    paths: pokemon.map(({ name: { english } }) => ({
+      params: {
+        name: english,
+      },
+    })),
+    fallback: false,
+  }
+}
+
+export async function getStaticProps(context) {
+  return {
+    props: {
+      data: pokemon.filter(
+        ({ name: { english } }) => english === context.params.name
+      )[0],
+    },
   }
 }
 
@@ -54,14 +60,4 @@ export default function Pokemon({ data }) {
       </Container>
     </div>
   )
-}
-
-export async function getServerSideProps(context) {
-  const data = await getPokemon(context.params.name)
-
-  return {
-    props: {
-      data: data,
-    },
-  }
 }
