@@ -1,15 +1,13 @@
-import { useRouter } from 'next/router'
-import { useQuery } from 'react-query'
 import Head from 'next/head'
-import { Container, Row, Col, Card } from 'react-bootstrap'
+import { Container, Row, Col } from 'react-bootstrap'
 import axios from 'axios'
 
-const getPokemon = async ({ queryKey }) => {
-  const [_key, name] = queryKey
+const getPokemon = async (context) => {
+  const name = context?.name ? context.name[1] : context
   try {
     console.log('Fetching data for query:', name)
     const { data } = await axios.get(
-      `/api/pokemon?name=${encodeURIComponent(name)}`
+      `http://localhost:3000/api/pokemon?name=${encodeURIComponent(name)}`
     )
     console.log('Received data:', data)
     return data
@@ -19,21 +17,13 @@ const getPokemon = async ({ queryKey }) => {
   }
 }
 
-export default function Pokemon() {
-  const router = useRouter()
-  const { name } = router.query
-  const { data, error, isLoading } = useQuery(['name', name], getPokemon, {
-    enabled: !!name,
-  })
-
+export default function Pokemon({ data }) {
   return (
     <div>
       <Head>
         <title>{(data && data.name.english) || 'Pokemon'}</title>
       </Head>
       <Container>
-        {isLoading && <p>Loading...</p>}
-        {error && <p>Error fetching data: {error.message}</p>}
         {data && (
           <Container>
             <h1>
@@ -64,4 +54,14 @@ export default function Pokemon() {
       </Container>
     </div>
   )
+}
+
+export async function getServerSideProps(context) {
+  const data = await getPokemon(context.params.name)
+
+  return {
+    props: {
+      data: data,
+    },
+  }
 }
